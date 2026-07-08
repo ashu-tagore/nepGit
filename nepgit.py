@@ -17,6 +17,9 @@ argparser = argparse.ArgumentParser(description="The stupidest content tracker")
 argsubparsers = argparser.add_subparsers(title="Commands", dest="command")
 argsubparsers.required = True
 
+# Registering subcommands
+argsubparsers.add_parser("init", help="Create an empty Git repository.")
+
 class GitRepository(object):
     """A git repository"""
     
@@ -45,9 +48,30 @@ def repo_path(repo, *path):
     """Compute path under repo's gitdir."""
     return os.path.join(repo.gitdir, *path)
 
-def repo_file(repo, *path):
-    """Return path to a file in repo's gitdir."""
-    return repo_path(repo, *path)
+def repo_file(repo, *path, mkdir=False):
+    """Same as repo_path, but create dirname(*path) if absent.  For
+       example, repo_file(r, \"refs\", \"remotes\", \"origin\", \"HEAD\") will create
+        .git/refs/remotes/origin."""
+    if repo_dir(repo, *path[:-1], mkdir=mkdir):
+        return repo_path(repo, *path)
+
+def repo_dir(repo, *path, mkdir=False):
+    """
+    Same as repo_path, but mkdir *path if absent if mkdir
+    """
+    path = repo_path(repo, *path)
+
+    if os.path.exists(path):
+        if (os.path.isdir(path)):
+            return path
+        else:
+            raise Exception(f"{path} is not a directory")
+        
+    if mkdir:
+        os.makedirs(path)
+        return path
+    else:
+        return None
 
 # Placeholder functions for commands
 def cmd_add(args):
